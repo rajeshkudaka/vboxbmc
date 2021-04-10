@@ -13,4 +13,4 @@ pyghmi==1.5.25
 pbr==5.5.1
 pyzmq==19.0.2
 virtualbox==2.1.1
-
+configparser==4.0.2

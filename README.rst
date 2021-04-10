@@ -53,3 +53,13 @@ https://storyboard.openstack.org/#!/project/openstack/virtualbmc
 For information on how to contribute to VirtualBMC, see
 https://docs.openstack.org/virtualbmc/latest/contributor
 
+Hacks
+~~~~~
+
+.. code-block:: bash
+
+Use "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" to escape the below issue. This is caused due to Multiprocessing, issue with closing the process and reinitializing.
+
+objc[6941]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called.
+objc[6941]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint on objc_initializeAfterForkError to debug.
+

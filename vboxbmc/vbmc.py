@@ -11,7 +11,7 @@
 #    under the License.
 
 import xml.etree.ElementTree as ET
-
+import time
 import virtualbox
 from virtualbox.library import MachineState as vmstate
 
@@ -53,29 +53,61 @@ SET_BOOT_DEVICES_MAP = {
 class VBoxBMC(bmc.Bmc):
 
     def __init__(self, username, password, port, address,
-                 vm_name, libvirt_sasl_password=None, **kwargs):
+                 vm_name, **kwargs):
         super(VBoxBMC, self).__init__({username: password},
                                          port=port, address=address)
+        self.vbox = virtualbox.VirtualBox()
         self.vm_name = vm_name
 
     def get_power_state(self):
-        LOG.debug('Get power state called for domain %(domain)s',
-                  {'domain': self.domain_name})
+        LOG.debug('Get power state called for vm %(vm)s',
+                  {'vm': self.vm_name})
         try:
-            with virtualbox.VirtualBox() as vbox:
-                vm = vbox.find_machine(self.vm_name)
-                if vm.state == vmstate.running
-                    return POWERON
-        #try:
-        #    with utils.libvirt_open(readonly=True, **self._conn_args) as conn:
-        #        domain = utils.get_libvirt_domain(conn, self.domain_name)
-        #        if domain.isActive():
-        #            return POWERON
-        #except libvirt.libvirtError as e:
-        #    msg = ('Error getting the power state of domain %(domain)s. '
-        #           'Error: %(error)s' % {'domain': self.domain_name,
-        #                                 'error': e})
-        #    LOG.error(msg)
-        #    raise exception.VirtualBMCError(message=msg)
-
+            vm = self.vbox.find_machine(self.vm_name)
+            if vm.state == vmstate.running:
+                return POWERON
+        except Exception as e:
+            msg = ('Error getting the power state of vm %(vm)s. '
+                   'Error: %(error)s' % {'vm': self.vm_name,
+                                         'error': e})
+            LOG.error(msg)
+            raise exception.VBoxBMCError(message=msg)
         return POWEROFF
+
+    def power_off(self):
+        LOG.debug('Power off called for vm %(vm)s',
+                  {'vm': self.vm_name})
+        try:
+            vm = self.vbox.find_machine(self.vm_name)
+            if vm.state == vmstate.powered_off:
+                LOG.info("VM %(vm)s is already in powered off state.", {'vm': self.vm_name })
+            else:
+                with vm.create_session() as session:
+                    session.console.power_down()
+        except Exception as e:
+            LOG.error('Error powering off the vm %(vm)s. '
+                      'Error: %(error)s', {'vm': self.vm_name,
+                                           'error': e})
+            # Command failed, but let client to retry
+            return IPMI_COMMAND_NODE_BUSY
+
+    def power_on(self):
+        LOG.debug('Power on called for vm %(vm)s',
+                  {'vm': self.vm_name})
+        try:
+            vm = self.vbox.find_machine(self.vm_name)
+            if vm.state == vmstate.running:
+                LOG.info("VM %(vm)s is already running.", {'vm': self.vm_name })
+            else:
+                with virtualbox.Session() as session:
+                    progress = vm.launch_vm_process(session, 'headless', [])
+                    while session.state._value != session.state.locked._value:
+                        LOG.info("Waiting for session to reach LOCKED state. Sleeping for 2s")
+                        time.sleep(2)
+        except Exception as e:
+            LOG.error('Error powering on the vm %(vm)s. '
+                      'Error: %(error)s', {'vm': self.vm_name,
+                                           'error': e})
+            # Command failed, but let client to retry
+            return IPMI_COMMAND_NODE_BUSY
+

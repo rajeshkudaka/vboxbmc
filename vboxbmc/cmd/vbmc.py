@@ -22,7 +22,7 @@ import zmq
 
 import vboxbmc
 from vboxbmc import config as vbmc_config
-from vboxbmc.exception import VirtualBMCError
+from vboxbmc.exception import VBoxBMCError
 from vboxbmc import log
 
 CONF = vbmc_config.get_config()
@@ -90,7 +90,7 @@ class ZmqClient(object):
                        '%(port)s, error: %(error)s' % {'port': server_port,
                                                        'error': ex})
                 LOG.error(msg)
-                raise VirtualBMCError(msg)
+                raise VBoxBMCError(msg)
 
         finally:
             if socket:
@@ -103,7 +103,7 @@ class ZmqClient(object):
         except ValueError as ex:
             msg = 'Server response parsing error %(error)s' % {'error': ex}
             LOG.error(msg)
-            raise VirtualBMCError(msg)
+            raise VBoxBMCError(msg)
 
         rc = data_in.pop('rc', None)
         if rc:
@@ -112,7 +112,7 @@ class ZmqClient(object):
                 'msg': '\n'.join(data_in.get('msg', ()))
             }
             LOG.error(msg)
-            raise VirtualBMCError(msg)
+            raise VBoxBMCError(msg)
 
         return data_in
 

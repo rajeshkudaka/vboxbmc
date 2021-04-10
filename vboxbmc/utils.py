@@ -13,62 +13,7 @@
 import os
 import sys
 
-import libvirt
-
-from virtualbmc import exception
-
-
-class libvirt_open(object):
-
-    def __init__(self, uri, sasl_username=None, sasl_password=None,
-                 readonly=False):
-        self.uri = uri
-        self.sasl_username = sasl_username
-        self.sasl_password = sasl_password
-        self.readonly = readonly
-
-    def __enter__(self):
-        try:
-            if self.sasl_username and self.sasl_password:
-
-                def request_cred(credentials, user_data):
-                    for credential in credentials:
-                        if credential[0] == libvirt.VIR_CRED_AUTHNAME:
-                            credential[4] = self.sasl_username
-                        elif credential[0] == libvirt.VIR_CRED_PASSPHRASE:
-                            credential[4] = self.sasl_password
-                    return 0
-
-                auth = [[libvirt.VIR_CRED_AUTHNAME,
-                         libvirt.VIR_CRED_PASSPHRASE], request_cred, None]
-                flags = libvirt.VIR_CONNECT_RO if self.readonly else 0
-                self.conn = libvirt.openAuth(self.uri, auth, flags)
-            elif self.readonly:
-                self.conn = libvirt.openReadOnly(self.uri)
-            else:
-                self.conn = libvirt.open(self.uri)
-
-            return self.conn
-
-        except libvirt.libvirtError as e:
-            raise exception.LibvirtConnectionOpenError(uri=self.uri, error=e)
-
-    def __exit__(self, type, value, traceback):
-        self.conn.close()
-
-
-def get_libvirt_domain(conn, domain):
-    try:
-        return conn.lookupByName(domain)
-    except libvirt.libvirtError:
-        raise exception.DomainNotFound(domain=domain)
-
-
-def check_libvirt_connection_and_domain(uri, domain, sasl_username=None,
-                                        sasl_password=None):
-    with libvirt_open(uri, readonly=True, sasl_username=sasl_username,
-                      sasl_password=sasl_password) as conn:
-        get_libvirt_domain(conn, domain)
+from vboxbmc import exception
 
 
 def is_pid_running(pid):

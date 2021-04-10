@@ -35,7 +35,7 @@ DEFAULT_SECTION = 'VBoxBMC'
 CONF = vbmc_config.get_config()
 
 
-class VBpxBMCManager(object):
+class VBoxBMCManager(object):
 
     VBMC_OPTIONS = ['username', 'password', 'address', 'port',
                     'vm_name', 'active']
@@ -111,6 +111,8 @@ class VBpxBMCManager(object):
         enabled but dead instances, kills non-configured
         but alive ones.
         """
+        LOG.info("Sync called.")
+	LOG.info(self._running_vms)
 
         def vbmc_runner(bmc_config):
             # The manager process installs a signal handler for SIGTERM to

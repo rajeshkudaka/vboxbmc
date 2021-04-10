@@ -44,11 +44,11 @@ class VBoxBMCConfig(object):
         },
         'log': {
             'logfile': None,
-            'debug': 'false'
+            'debug': 'true'
         },
         'ipmi': {
             # Maximum time (in seconds) to wait for the data to come across
-            'session_timeout': 1
+            'session_timeout': 5
         },
     }
 
