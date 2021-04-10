@@ -1,24 +1,22 @@
 ==========
-VirtualBMC
+VBoxBMC
 ==========
-
-Team and repository tags
-------------------------
-
-.. image:: https://governance.openstack.org/tc/badges/virtualbmc.svg
-    :target: https://governance.openstack.org/tc/reference/tags/index.html
 
 Overview
 --------
 
-A virtual BMC for controlling virtual machines using IPMI commands.
+A virtualbox BMC for controlling virtual machines using IPMI commands.
 
 Installation
 ~~~~~~~~~~~~
 
+Note: Only works with python2.7 for now.
+
 .. code-block:: bash
 
-  pip install virtualbmc
+  git clone https://github.com/rajeshkudaka/vboxbmc.git
+  cd vboxbmc
+  pip install .
 
 
 Supported IPMI commands
@@ -27,7 +25,7 @@ Supported IPMI commands
 .. code-block:: bash
 
   # Power the virtual machine on, off, graceful off, NMI and reset
-  ipmitool -I lanplus -U admin -P password -H 127.0.0.1 power on|off|soft|diag|reset
+  ipmitool -I lanplus -U admin -P password -H 127.0.0.1 power on|off|soft|reset
 
   # Check the power status
   ipmitool -I lanplus -U admin -P password -H 127.0.0.1 power status
@@ -41,24 +39,15 @@ Supported IPMI commands
 Project resources
 ~~~~~~~~~~~~~~~~~
 
-* Documentation: https://docs.openstack.org/virtualbmc/latest
 * Source: https://opendev.org/openstack/virtualbmc
-* Bugs: https://storyboard.openstack.org/#!/project/openstack/virtualbmc
-* Release Notes: https://docs.openstack.org/releasenotes/virtualbmc/
-
-Project status, bugs, and requests for feature enhancements (RFEs) are tracked
-in StoryBoard:
-https://storyboard.openstack.org/#!/project/openstack/virtualbmc
-
-For information on how to contribute to VirtualBMC, see
-https://docs.openstack.org/virtualbmc/latest/contributor
 
 Hacks
 ~~~~~
 
-.. code-block:: bash
+Use "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" to escape the below issue.
+This is caused due to Multiprocessing, issue with exiting the process gracefully and reinitializing.
 
-  Use "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" to escape the below issue. This is caused due to Multiprocessing, issue with closing the process and reinitializing.
+.. code-block:: bash
 
   objc[6941]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called.
   objc[6941]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint on objc_initializeAfterForkError to debug.

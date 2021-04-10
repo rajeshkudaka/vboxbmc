@@ -48,7 +48,7 @@ class VBoxBMCConfig(object):
         },
         'ipmi': {
             # Maximum time (in seconds) to wait for the data to come across
-            'session_timeout': 5
+            'session_timeout': 30
         },
     }
 

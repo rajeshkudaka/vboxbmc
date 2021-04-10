@@ -38,15 +38,15 @@ IPMI_INVALID_DATA = 0xcc
 
 # Boot device maps
 GET_BOOT_DEVICES_MAP = {
-    'network': 4,
-    'hd': 8,
-    'cdrom': 0x14,
+    'Network': 4,
+    'HardDisk': 8,
+    'DVD': 0x14,
 }
 
 SET_BOOT_DEVICES_MAP = {
-    'network': 'network',
-    'hd': 'hd',
-    'optical': 'cdrom',
+    'network': virtualbox.library.DeviceType.network,
+    'hd': virtualbox.library.DeviceType.hard_disk,
+    'optical': virtualbox.library.DeviceType.dvd,
 }
 
 
@@ -73,6 +73,23 @@ class VBoxBMC(bmc.Bmc):
             LOG.error(msg)
             raise exception.VBoxBMCError(message=msg)
         return POWEROFF
+
+    def power_shutdown(self):
+        LOG.debug('Power shutdown(soft) called for vm %(vm)s',
+                  {'vm': self.vm_name})
+        try:
+            vm = self.vbox.find_machine(self.vm_name)
+            if vm.state == vmstate.powered_off:
+                LOG.info("VM %(vm)s is already in powered off state.", {'vm': self.vm_name })
+            else:
+                with vm.create_session() as session:
+                    session.console.power_button()
+        except Exception as e:
+            LOG.error('Error power shutdown(soft) the vm %(vm)s. '
+                      'Error: %(error)s', {'vm': self.vm_name,
+                                           'error': e})
+            # Command failed, but let client to retry
+            return IPMI_COMMAND_NODE_BUSY
 
     def power_off(self):
         LOG.debug('Power off called for vm %(vm)s',
@@ -104,6 +121,8 @@ class VBoxBMC(bmc.Bmc):
                     while session.state._value != session.state.locked._value:
                         LOG.info("Waiting for session to reach LOCKED state. Sleeping for 2s")
                         time.sleep(2)
+        except virtualbox.library.OleErrorUnexpected as e:
+            LOG.warn(e)
         except Exception as e:
             LOG.error('Error powering on the vm %(vm)s. '
                       'Error: %(error)s', {'vm': self.vm_name,
@@ -111,3 +130,43 @@ class VBoxBMC(bmc.Bmc):
             # Command failed, but let client to retry
             return IPMI_COMMAND_NODE_BUSY
 
+    def power_reset(self):
+        LOG.debug('Power reset called for vm %(vm)s',
+                  {'vm': self.vm_name})
+        try:
+            vm = self.vbox.find_machine(self.vm_name)
+            if vm.state == vmstate.powered_off:
+                LOG.info("VM %(vm)s is in powered off state. Cannot reset.", {'vm': self.vm_name })
+            else:
+                with vm.create_session() as session:
+                    session.console.reset()
+            session.unlock_machine()
+        except Exception as e:
+            LOG.error('Error reseting the vm %(vm)s. '
+                      'Error: %(error)s', {'vm': self.vm_name,
+                                           'error': e})
+            # Command failed, but let client to retry
+            return IPMI_COMMAND_NODE_BUSY
+
+    def get_boot_device(self):
+        LOG.debug('Get boot device called for %(vm)s',
+                  {'vm': self.vm_name})
+        vm = self.vbox.find_machine(self.vm_name)
+        return GET_BOOT_DEVICES_MAP.get(vm.get_boot_order(1).__str__ ,0)
+
+    def set_boot_device(self, bootdevice):
+        LOG.debug('Set boot device called for %(vm)s with boot '
+                  'device "%(bootdev)s"', {'vm': self.vm_name,
+                                           'bootdev': bootdevice})
+        device_types = ['network', 'hd', 'optical']
+        device = SET_BOOT_DEVICES_MAP.get(bootdevice)
+        device_types.remove(bootdevice)
+        vm = self.vbox.find_machine(self.vm_name)
+        with vm.create_session() as session:
+            session.machine.set_boot_order(1, device)
+            for dev in device_types:
+                session.machine.set_boot_order(len(device_types), SET_BOOT_DEVICES_MAP.get(dev))
+                device_types.remove(dev)
+            session.machine.save_settings()
+                
+                         
