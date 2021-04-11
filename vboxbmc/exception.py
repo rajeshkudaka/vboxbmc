@@ -31,11 +31,6 @@ class VMNotFound(VBoxBMCError):
     message = 'No vm with matching name %(vm)s was found'
 
 
-class VBoxConnectionOpenError(VBoxBMCError):
-    message = ('Fail to establish a connection with virtualbox URI "%(uri)s". '
-               'Error: %(error)s')
-
-
 class DetachProcessError(VBoxBMCError):
     message = ('Error when forking (detaching) the VBoxBMC process '
                'from its parent and session. Error: %(error)s')

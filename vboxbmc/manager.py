@@ -234,14 +234,6 @@ class VBoxBMCManager(object):
     def add(self, username, password, port, address, vm_name,
             **kwargs):
 
-        # check libvirt's connection and if domain exist prior to adding it
-        #utils.check_libvirt_connection_and_domain(
-        #    libvirt_uri, domain_name,
-        #    sasl_username=libvirt_sasl_username,
-        #    sasl_password=libvirt_sasl_password)
-
-	# ADD: check if the vm exists
-
         vm_path = os.path.join(self.config_dir, vm_name)
 
         try:

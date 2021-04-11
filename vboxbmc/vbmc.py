@@ -47,6 +47,7 @@ SET_BOOT_DEVICES_MAP = {
     'network': virtualbox.library.DeviceType.network,
     'hd': virtualbox.library.DeviceType.hard_disk,
     'optical': virtualbox.library.DeviceType.dvd,
+    'null': virtualbox.library.DeviceType.null,
 }
 
 
@@ -158,15 +159,25 @@ class VBoxBMC(bmc.Bmc):
         LOG.debug('Set boot device called for %(vm)s with boot '
                   'device "%(bootdev)s"', {'vm': self.vm_name,
                                            'bootdev': bootdevice})
-        device_types = ['network', 'hd', 'optical']
-        device = SET_BOOT_DEVICES_MAP.get(bootdevice)
+
+	device_types = SET_BOOT_DEVICES_MAP.keys()
         device_types.remove(bootdevice)
+        device_types.remove('null')
+        device_types.insert(0, bootdevice)
         vm = self.vbox.find_machine(self.vm_name)
+
         with vm.create_session() as session:
-            session.machine.set_boot_order(1, device)
-            for dev in device_types:
-                session.machine.set_boot_order(len(device_types), SET_BOOT_DEVICES_MAP.get(dev))
-                device_types.remove(dev)
+            LOG.debug('Setting all boot devices to null.')
+            for pos in range(1,5):
+                session.machine.set_boot_order(pos, SET_BOOT_DEVICES_MAP.get('null'))
+
+            for pos, dev in enumerate(device_types):
+                LOG.debug('Setting boot order, device: %(device)s, position: %(position)s',
+                          {'device': dev, 'position': pos + 1})
+                if dev == bootdevice:
+                    session.machine.set_boot_order(pos + 1, SET_BOOT_DEVICES_MAP.get(dev))
+                else:
+                    session.machine.set_boot_order(pos + 1, SET_BOOT_DEVICES_MAP.get(dev))
             session.machine.save_settings()
                 
                          
